@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Master Karyawan{% endblock %}
+{% block content %}
+
+<h4 class="mb-4">Master Karyawan</h4>
+
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <a href="{% url 'upload_karyawan_excel' %}" class="btn btn-sm btn-primary">
+        <i class="bi bi-upload"></i> Upload Excel
+    </a>
+    <a href="{% url 'karyawan_tambah' %}" class="btn btn-sm btn-success">
+        <i class="bi bi-plus-circle"></i> Tambah Data Baru
+    </a>
+</div>
+
+<div class="table-responsive">
+    <table id="datatable" class="table table-bordered table-hover">
+        <thead class="table-light">
+        <tr>
+            <th>No ID</th>
+            <th>Nama</th>
+            <th>Departemen</th>
+            <th>NIK</th>
+            <th>BPJS Kesehatan</th>
+            <th>BPJS Ketenagakerjaan</th>
+            <th>No HP</th>
+            <th>Akses HP</th>
+            <th>Akses Laptop</th>
+            <th>Aksi</th>
+        </tr>
+        </thead>
+
+        <tbody>
+        {% for k in karyawan %}
+        <tr>
+            <td>{{ k.no_id }}</td>
+            <td>{{ k.nama }}</td>
+            <td>{{ k.departemen }}</td>
+            <td>{{ k.nik }}</td>
+            <td>{{ k.bpjs_k }}</td>
+            <td>{{ k.bpjs_tk }}</td>
+            <td>{{ k.no_hp }}</td>
+            <td>
+            {% if k.akses_hp %}
+                <span class="badge bg-success">Ya</span>
+            {% else %}
+                <span class="badge bg-secondary">Tidak</span>
+            {% endif %}
+            </td>
+            <td>
+            {% if k.akses_laptop %}
+                <span class="badge bg-success">Ya</span>
+            {% else %}
+                <span class="badge bg-secondary">Tidak</span>
+            {% endif %}
+            </td>
+            <td>
+            <a href="{% url 'admin:core_karyawan_change' k.id %}" class="btn btn-sm btn-warning">Edit</a>
+            <a href="{% url 'admin:core_karyawan_delete' k.id %}" class="btn btn-sm btn-danger">Hapus</a>
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+
+    </table>
+</div>
+
+<script>
+$(document).ready(function() {
+    $('#datatable').DataTable({
+        dom: 'Bfrtip',
+        buttons: ['excel', 'pdf', 'print'],
+            language: {
+                search: "Cari:",
+                lengthMenu: "Tampilkan _MENU_ entri",
+                info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
+                paginate: {
+                    previous: "Sebelumnya",
+                    next: "Berikutnya"
+                }
+            }
+    });
+});
+</script>
+
+{% endblock %}

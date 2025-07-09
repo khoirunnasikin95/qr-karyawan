@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="text-center mb-4">
+    <h5 class="fw-bold">Scan Kartu Karyawan (Informasi)</h5>
+</div>
+
+<div class="d-flex flex-column align-items-center">
+    <video id="preview" width="300" height="250" class="border rounded shadow-sm"></video>
+</div>
+
+<div id="hasil" class="mt-4 text-center d-none">
+    <h5>Data Karyawan</h5>
+    <table class="table table-bordered w-75 mx-auto">
+        <tbody>
+            <tr><th>Nama</th><td id="nama"></td></tr>
+            <tr><th>Departemen</th><td id="departemen"></td></tr>
+            <tr><th>NIK</th><td id="nik"></td></tr>
+            <tr><th>BPJS Kesehatan</th><td id="bpjs_k"></td></tr>
+            <tr><th>BPJS Ketenagakerjaan</th><td id="bpjs_tk"></td></tr>
+            <tr><th>No HP</th><td id="no_hp"></td></tr>
+            <tr><th>Akses HP</th><td id="akses_hp"></td></tr>
+            <tr><th>Akses Laptop</th><td id="akses_laptop"></td></tr>
+        </tbody>
+    </table>
+    <button class="btn btn-outline-primary" onclick="window.location.reload()">Scan Ulang</button>
+</div>
+
+<div id="notfound" class="mt-4 text-center d-none">
+    <div class="alert alert-danger">ID tidak ditemukan. Silakan scan ulang.</div>
+    <button class="btn btn-outline-danger" onclick="window.location.reload()">Scan Ulang</button>
+</div>
+
+<!-- ZXing Scanner -->
+<script src="https://unpkg.com/@zxing/browser@latest"></script>
+<script>
+    const hasil = document.getElementById("hasil");
+    const notfound = document.getElementById("notfound");
+
+    const codeReader = new ZXing.BrowserMultiFormatReader();
+    const previewElem = document.getElementById("preview");
+
+    codeReader.decodeFromVideoDevice(null, previewElem, (result, err) => {
+        if (result) {
+            const no_id = result.text;
+            codeReader.reset();
+
+            fetch(`/api/informasi/${no_id}/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'ok') {
+                        hasil.classList.remove("d-none");
+                        document.getElementById("nama").innerText = data.data.nama;
+                        document.getElementById("departemen").innerText = data.data.departemen;
+                        document.getElementById("nik").innerText = data.data.nik || '-';
+                        document.getElementById("bpjs_k").innerText = data.data.bpjs_k || '-';
+                        document.getElementById("bpjs_tk").innerText = data.data.bpjs_tk || '-';
+                        document.getElementById("no_hp").innerText = data.data.no_hp || '-';
+                        document.getElementById("akses_hp").innerText = data.data.akses_hp;
+                        document.getElementById("akses_laptop").innerText = data.data.akses_laptop;
+                    } else {
+                        notfound.classList.remove("d-none");
+                    }
+                });
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,235 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<div class="container py-4">
+  <h4 class="mb-4">Selamat Datang, {{ request.user.username }}!</h4>
+
+<div class="row gx-4 gy-5 px-3 px-md-4">
+
+    <!-- Card: Ambil Benefit Hari Ini -->
+    <div class="col-md-6 col-xl-4">
+        <a href="{% url 'rekap_benefit' %}" class="text-decoration-none">
+            <div class="card shadow-sm border-0 hover-shadow card-with-icon">
+                <div class="icon-frame bg-primary text-white">
+                    <i class="bi bi-box-seam fs-5"></i>
+                </div>
+                <div class="card-body">
+                    <h6 class="text-muted">Ambil Benefit Hari Ini</h6>
+                    <h3 class="fw-bold text-primary">{{ total_benefit_today }}</h3>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Card: Jumlah Karyawan -->
+    <div class="col-md-6 col-xl-4">
+        <a href="{% if request.user.is_superuser or request.user.groups.first.name == 'Administrator' %}{% url 'karyawan_list' %}{% else %}#{% endif %}" class="text-decoration-none">
+            <div class="card shadow-sm border-0 hover-shadow card-with-icon">
+                <div class="icon-frame bg-success text-white">
+                    <i class="bi bi-people-fill fs-5"></i>
+                </div>
+                <div class="card-body">
+                    <h6 class="text-muted">Jumlah Karyawan</h6>
+                    <h3 class="fw-bold text-success">{{ total_karyawan }}</h3>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Card: SP Aktif -->
+    <div class="col-md-6 col-xl-4">
+        <a href="{% if request.user.is_superuser or request.user.groups.first.name == 'Administrator' %}{% url 'sp_list' %}{% else %}#{% endif %}" class="text-decoration-none">
+            <div class="card shadow-sm border-0 hover-shadow card-with-icon">
+                <div class="icon-frame bg-danger text-white">
+                    <i class="bi bi-exclamation-diamond fs-5"></i>
+                </div>
+                <div class="card-body">
+                    <h6 class="text-muted">Jumlah SP Aktif</h6>
+                    <h3 class="fw-bold text-danger">{{ total_sp_aktif }}</h3>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Card: Izin Membawa HP -->
+    <div class="col-md-6 col-xl-4">
+        <a href="{% if request.user.is_superuser or request.user.groups.first.name == 'Administrator' %}{% url 'karyawan_list' %}{% else %}#{% endif %}" class="text-decoration-none">
+            <div class="card shadow-sm border-0 hover-shadow card-with-icon">
+                <div class="icon-frame bg-info text-white">
+                    <i class="bi bi-phone-fill"></i>
+                </div>
+                <div class="card-body">
+                    <h6 class="text-muted">Izin Membawa HP</h6>
+                    <h3 class="fw-bold text-info">{{ total_izin_bawa_hp }}</h3>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Card: Jumlah User Aktif -->
+    <div class="col-md-6 col-xl-4">
+        <a href="{% if request.user.is_superuser or request.user.groups.first.name == 'Administrator' %}{% url 'kelola_pengguna' %}{% else %}#{% endif %}" class="text-decoration-none">
+            <div class="card shadow-sm border-0 hover-shadow card-with-icon">
+                <div class="icon-frame bg-warning text-white">
+                    <i class="bi bi-person-check fs-5"></i>
+                </div>
+                <div class="card-body">
+                    <h6 class="text-muted">Jumlah User Aktif</h6>
+                    <h3 class="fw-bold text-warning">{{ total_user }}</h3>
+                </div>
+            </div>
+        </a>
+    </div>
+
+</div>
+
+
+  <!-- Tombol Tab -->
+  <ul class="nav nav-tabs justify-content-center border-0 mb-3" id="scanTabs">
+    {% if 'info_user' in user_groups or is_admin %}
+    <li class="nav-item">
+      <button class="nav-link active small" data-target="#tab-informasi">Informasi</button>
+    </li>
+    {% endif %}
+    {% if 'benefit_user' in user_groups or is_admin %}
+    <li class="nav-item">
+      <button class="nav-link small" data-target="#tab-benefit">Benefit</button>
+    </li>
+    {% endif %}
+    {% if 'disiplin_user' in user_groups or is_admin %}
+    <li class="nav-item">
+      <button class="nav-link small" data-target="#tab-kedisiplinan">Kedisiplinan</button>
+    </li>
+    {% endif %}
+  </ul>
+
+  <!-- Area Konten -->
+  <div class="tab-content">
+    {% if 'info_user' in user_groups or is_admin %}
+    <div id="tab-informasi" class="tab-pane fade show active">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title">Scan QR - Informasi</h5>
+          <video id="camera-informasi" width="100%" autoplay muted playsinline></video>
+          <div id="result-informasi" class="mt-3"></div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if 'benefit_user' in user_groups or is_admin %}
+    <div id="tab-benefit" class="tab-pane fade">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title">Scan QR - Benefit</h5>
+          <video id="camera-benefit" width="100%" autoplay muted playsinline></video>
+          <div id="result-benefit" class="mt-3"></div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if 'disiplin_user' in user_groups or is_admin %}
+    <div id="tab-kedisiplinan" class="tab-pane fade">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title">Scan QR - Kedisiplinan</h5>
+          <video id="camera-kedisiplinan" width="100%" autoplay muted playsinline></video>
+          <div id="result-kedisiplinan" class="mt-3"></div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- HTML5 QR Code -->
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+<script>
+  const scannerInstances = {};
+  const resultMap = {
+    'tab-informasi': 'result-informasi',
+    'tab-benefit': 'result-benefit',
+    'tab-kedisiplinan': 'result-kedisiplinan'
+  };
+  const videoMap = {
+    'tab-informasi': 'camera-informasi',
+    'tab-benefit': 'camera-benefit',
+    'tab-kedisiplinan': 'camera-kedisiplinan'
+  };
+
+  function startScanner(tabId) {
+    Object.keys(scannerInstances).forEach(id => {
+      scannerInstances[id]?.clear();
+    });
+
+    const videoId = videoMap[tabId];
+    const resultId = resultMap[tabId];
+
+    const html5QrCode = new Html5Qrcode(videoId);
+    scannerInstances[tabId] = html5QrCode;
+
+    html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 },
+      qrCodeMessage => {
+        if (tabId === 'tab-informasi') {
+          fetch(`/api/informasi/${qrCodeMessage}/`)
+            .then(res => res.json())
+            .then(data => {
+              if (data.status === 'ok') {
+                const k = data.data;
+                document.getElementById(resultId).innerHTML = `
+                  <div class="card mt-3">
+                    <div class="card-body">
+                      <h5 class="card-title">${k.nama}</h5>
+                      <p><strong>ID:</strong> ${qrCodeMessage}</p>
+                      <p><strong>Departemen:</strong> ${k.departemen}</p>
+                      <p><strong>No BPJS:</strong> ${k.no_bpjs}</p>
+                      <p><strong>No HP:</strong> ${k.no_hp}</p>
+                      <p><strong>Akses HP/Laptop:</strong> ${k.akses_hp}</p>
+                    </div>
+                  </div>`;
+              } else {
+                document.getElementById(resultId).innerHTML = `<div class="alert alert-danger mt-2">Data tidak ditemukan</div>`;
+              }
+            });
+        } else {
+          document.getElementById(resultId).innerHTML = `<strong>QR Terdeteksi:</strong> ${qrCodeMessage}`;
+        }
+        html5QrCode.stop(); // Optional: stop after 1 scan
+      },
+      error => {});
+  }
+
+  document.querySelectorAll('[data-target]').forEach(btn => {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('show', 'active'));
+      document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
+      const target = document.querySelector(this.dataset.target);
+      if (target) {
+        target.classList.add('show', 'active');
+        this.classList.add('active');
+        startScanner(target.id);
+      }
+    });
+  });
+
+  document.addEventListener('DOMContentLoaded', () => {
+    startScanner('tab-informasi');
+  });
+</script>
+
+<style>
+  .nav-tabs .nav-link {
+    border: none;
+    background: #e9ecef;
+    margin: 0 4px;
+    border-radius: 20px;
+    transition: all 0.2s ease-in-out;
+  }
+
+  .nav-tabs .nav-link.active {
+    background: #0d6efd;
+    color: white;
+  }
+</style>
+{% endblock %}

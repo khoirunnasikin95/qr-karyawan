@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="text-center mb-4">
+    <h5 class="fw-bold">Scan Kartu Karyawan (Kedisiplinan)</h5>
+</div>
+
+<div class="d-flex flex-column align-items-center">
+    <video id="preview" width="300" height="250" class="border rounded shadow-sm"></video>
+</div>
+
+<div id="hasil" class="mt-4 d-none">
+    <h5 class="text-center">Rekap 3 Bulan Terakhir</h5>
+    <table class="table table-bordered w-75 mx-auto">
+        <tbody>
+            <tr><th>Nama</th><td id="nama"></td></tr>
+            <tr><th>Departemen</th><td id="departemen"></td></tr>
+            <tr><th>Total Alpha (A)</th><td id="A"></td></tr>
+            <tr><th>Datang Terlambat (DT)</th><td id="DT"></td></tr>
+            <tr><th>Pulang Cepat (PC)</th><td id="PC"></td></tr>
+            <tr><th>Cuti Mendadak (CX)</th><td id="CX"></td></tr>
+            <tr><th>SP Aktif</th><td id="SP"></td></tr>
+        </tbody>
+    </table>
+    <div class="text-center">
+        <button class="btn btn-outline-secondary" onclick="window.location.reload()">Scan Ulang</button>
+    </div>
+</div>
+
+<div id="notfound" class="mt-4 text-center d-none">
+    <div class="alert alert-danger">ID tidak ditemukan.</div>
+    <button class="btn btn-outline-danger" onclick="window.location.reload()">Scan Ulang</button>
+</div>
+
+<script src="https://unpkg.com/html5-qrcode"></script>
+<script>
+    const hasil = document.getElementById("hasil");
+    const notfound = document.getElementById("notfound");
+
+    function onScanSuccess(decodedText) {
+        html5QrcodeScanner.clear();
+
+        fetch(`/api/kedisiplinan/${decodedText}/`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'ok') {
+                hasil.classList.remove("d-none");
+                document.getElementById("nama").innerText = data.data.nama;
+                document.getElementById("departemen").innerText = data.data.departemen;
+                document.getElementById("A").innerText = data.data.A;
+                document.getElementById("DT").innerText = data.data.DT;
+                document.getElementById("PC").innerText = data.data.PC;
+                document.getElementById("CX").innerText = data.data.CX;
+
+                if (data.data.sp.length > 0) {
+                    document.getElementById("SP").innerText = data.data.sp.map(sp => `${sp.jenis} (sampai ${sp.tanggal_berlaku_sampai})`).join(', ');
+                } else {
+                    document.getElementById("SP").innerText = "Tidak Ada";
+                }
+            } else {
+                notfound.classList.remove("d-none");
+            }
+        });
+    }
+
+    const html5QrcodeScanner = new Html5Qrcode("preview");
+    html5QrcodeScanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        onScanSuccess
+    );
+</script>
+{% endblock %}

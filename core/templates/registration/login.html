@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="min-vh-100 d-flex justify-content-center align-items-center bg-light">
+  <div class="card shadow-lg border-0 rounded-4 p-4" style="min-width: 350px; max-width: 400px;">
+    <div class="text-center mb-4">
+      <h4 class="fw-bold text-primary">Selamat Datang</h4>
+      <p class="text-muted mb-0">Silakan masuk untuk melanjutkan</p>
+    </div>
+
+    {% if form.errors %}
+      <div class="alert alert-danger small">
+        Username atau password salah. Silakan coba lagi.
+      </div>
+    {% endif %}
+
+    <form method="post" novalidate>
+      {% csrf_token %}
+      <div class="mb-3">
+        <label for="id_username" class="form-label">Username</label>
+        <input type="text" name="username" autofocus required id="id_username" class="form-control">
+      </div>
+
+      <div class="mb-3">
+        <label for="id_password" class="form-label">Password</label>
+        <input type="password" name="password" required id="id_password" class="form-control">
+      </div>
+
+      <button type="submit" class="btn btn-primary w-100">Masuk</button>
+    </form>
+
+    <p class="text-center text-muted small mt-4 mb-0">© 2025 Industrial Relation | desainIkin</p>
+  </div>
+</div>
+{% endblock %}

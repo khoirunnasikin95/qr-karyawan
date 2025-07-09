@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}Surat Peringatan & Kedisiplinan{% endblock %}
+{% block content %}
+
+<h4 class="mb-3">Daftar Surat Peringatan</h4>
+
+<div class="d-flex justify-content-between flex-wrap gap-2 mb-3">
+    <a href="{% url 'upload_sp_excel' %}" class="btn btn-primary btn-sm">
+        <i class="bi bi-upload"></i> Upload SP
+    </a>
+</div>
+
+<!-- TABEL SP -->
+<div class="table-responsive mb-5">
+    <table id="table_sp" class="table table-bordered table-hover">
+        <thead class="table-light">
+            <tr>
+                <th>Nama</th>
+                <th>Jenis SP</th>
+                <th>Tanggal Terbit</th>
+                <th>Berlaku Sampai</th>
+                <th>Keterangan</th>
+                <th>Aksi</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in sp %}
+            <tr>
+                <td>{{ s.karyawan.nama }}</td>
+                <td>{{ s.jenis }}</td>
+                <td>{{ s.tanggal_terbit }}</td>
+                <td>{{ s.tanggal_berlaku_sampai }}</td>
+                <td>{{ s.keterangan }}</td>
+                <td>
+                    <a href="{% url 'admin:core_suratperingatan_change' s.id %}" class="btn btn-sm btn-warning">Edit</a>
+                    <a href="{% url 'admin:core_suratperingatan_delete' s.id %}" class="btn btn-sm btn-danger">Hapus</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<hr class="my-4">
+
+<h4 class="mb-3">Rekap Kedisiplinan 3 Bulan Terakhir</h4>
+<div class="d-flex justify-content-between flex-wrap gap-2 mb-3">
+    <a href="{% url 'upload_kedisiplinan_excel' %}" class="btn btn-primary btn-sm">
+        <i class="bi bi-upload"></i> Upload Kedisiplinan
+    </a>
+</div>
+<!-- TABEL KEDISIPLINAN -->
+<div class="table-responsive">
+    <table id="table_kedisiplinan" class="table table-bordered table-hover">
+        <thead class="table-light">
+            <tr>
+                <th>Tanggal</th>
+                <th>Nama</th>
+                <th>Departemen</th>
+                <th>Jenis Kedisiplinan</th>
+                <th>Keterangan</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for k in kedisiplinan %}
+            <tr>
+                <td>{{ k.tanggal }}</td>
+                <td>{{ k.karyawan.nama }}</td>
+                <td>{{ k.karyawan.departemen }}</td>
+                <td>{{ k.get_jenis_display }}</td>
+                <td>{{ k.keterangan|default:"-" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- DataTables -->
+<script>
+$(document).ready(function () {
+    $('#table_sp').DataTable({
+        dom: 'Bfrtip',
+        buttons: ['excel', 'pdf', 'print'],
+        language: {
+            search: "Cari:",
+            lengthMenu: "Tampilkan _MENU_ entri",
+            info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
+            paginate: {
+                previous: "Sebelumnya",
+                next: "Berikutnya"
+            }
+        }
+    });
+
+    $('#table_kedisiplinan').DataTable({
+        dom: 'Bfrtip',
+        buttons: ['excel', 'pdf', 'print'],
+        language: {
+            search: "Cari:",
+            lengthMenu: "Tampilkan _MENU_ entri",
+            info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
+            paginate: {
+                previous: "Sebelumnya",
+                next: "Berikutnya"
+            }
+        }
+    });
+});
+</script>
+
+{% endblock %}

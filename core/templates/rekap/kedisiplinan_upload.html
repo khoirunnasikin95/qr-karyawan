@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}Upload Kedisiplinan{% endblock %}
+{% block content %}
+<div class="container py-4">
+    <h4 class="mb-3">Upload Data Kedisiplinan (Excel)</h4>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="mb-3">
+            <input type="file" name="excel_file" accept=".xlsx,.xls" class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-success">Upload</button>
+        <a href="{% url 'sp_list' %}" class="btn btn-secondary">Kembali</a>
+    </form>
+
+    <div class="alert alert-info mt-4">
+        Format kolom: <code>tanggal, no_id, nama, departemen, jenis_kedisiplinan</code>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}Tambah Karyawan{% endblock %}
+{% block content %}
+<div class="container py-4">
+    <h4 class="mb-4">Tambah Data Karyawan</h4>
+    <form method="post">
+        {% csrf_token %}
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label>No ID</label>
+                <input type="text" name="no_id" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+                <label>Nama</label>
+                <input type="text" name="nama" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+                <label>Departemen</label>
+                <input type="text" name="departemen" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+                <label>NIK</label>
+                <input type="text" name="nik" class="form-control">
+            </div>
+            <div class="col-md-6">
+                <label>BPJS Kesehatan</label>
+                <input type="text" name="bpjs_k" class="form-control">
+            </div>
+            <div class="col-md-6">
+                <label>BPJS Ketenagakerjaan</label>
+                <input type="text" name="bpjs_tk" class="form-control">
+            </div>
+            <div class="col-md-6">
+                <label>No HP</label>
+                <input type="text" name="no_hp" class="form-control">
+            </div>
+            <div class="col-md-3 d-flex align-items-center gap-2">
+                <input class="form-check-input" type="checkbox" name="akses_hp" value="1" id="akses_hp">
+                <label class="form-check-label" for="akses_hp">Izin HP</label>
+            </div>
+            <div class="col-md-3 d-flex align-items-center gap-2">
+                <input class="form-check-input" type="checkbox" name="akses_laptop" value="1" id="akses_laptop">
+                <label class="form-check-label" for="akses_laptop">Izin Laptop</label>
+            </div>
+        </div>
+        <div class="mt-4">
+            <button class="btn btn-success" type="submit">Simpan</button>
+            <a href="{% url 'karyawan_list' %}" class="btn btn-secondary">Kembali</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

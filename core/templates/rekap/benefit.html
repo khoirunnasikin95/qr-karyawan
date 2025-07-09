@@ -1,0 +1,89 @@
+{% extends 'base.html' %} 
+{% block title %}Rekap Pengambilan Benefit{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h4 class="fw-bold mb-4 text-center">Rekap Pengambilan Benefit</h4>
+
+    <!-- Filter Tanggal -->
+    <form method="get" class="row g-2 align-items-end mb-3">
+        <div class="col-md-3">
+            <label class="form-label">Dari Tanggal:</label>
+            <input type="date" name="start_date" class="form-control" value="{{ start_date }}">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Sampai Tanggal:</label>
+            <input type="date" name="end_date" class="form-control" value="{{ end_date }}">
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary">Filter</button>
+        </div>
+        {% if start_date and end_date %}
+        <div class="col-auto">
+            <a href="{% url 'export_benefit_excel' %}?start_date={{ start_date }}&end_date={{ end_date }}" class="btn btn-success">
+                Ekspor ke Excel
+            </a>
+        </div>
+        {% endif %}
+    </form>
+
+    <div class="table-responsive shadow-sm rounded">
+        <table id="benefitTable" class="table table-bordered table-striped">
+            <thead class="table-light">
+                <tr>
+                    <th>Tanggal</th>
+                    <th>No ID</th>
+                    <th>Nama</th>
+                    <th>Departemen</th>
+                    <th>Benefit</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in data %}
+                <tr>
+                    <td>{{ b.tanggal }}</td>
+                    <td>{{ b.karyawan.no_id }}</td>
+                    <td>{{ b.karyawan.nama }}</td>
+                    <td>{{ b.karyawan.departemen }}</td>
+                    <td>{{ b.jenis }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- DataTables + Ekspor -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.bootstrap5.min.css">
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.bootstrap5.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
+
+<script>
+    $(document).ready(function () {
+        $('#benefitTable').DataTable({
+            responsive: true,
+            dom: 'Bfrtip',
+            buttons: ['excel', 'pdf', 'print'],
+            pageLength: 10,
+            language: {
+                search: "Cari:",
+                lengthMenu: "Tampilkan _MENU_ entri",
+                info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
+                paginate: {
+                    previous: "Sebelumnya",
+                    next: "Berikutnya"
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}
