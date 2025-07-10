@@ -4,8 +4,8 @@
     <h5 class="fw-bold">Scan Kartu Karyawan (Benefit)</h5>
 </div>
 
-<div class="d-flex flex-column align-items-center">
-    <video id="preview" width="300" height="250" class="border rounded shadow-sm"></video>
+<div class="d-flex justify-content-center">
+    <video id="preview" class="border rounded shadow-sm" style="width: 90vw; max-width: 400px; height: auto;"></video>
 </div>
 
 <div id="result" class="mt-4 text-center d-none">
@@ -29,40 +29,43 @@
 
 <script src="https://unpkg.com/html5-qrcode"></script>
 <script>
-    const html5QrcodeScanner = new Html5Qrcode("preview");
+    const hasil = document.getElementById("result");
+    const notfound = document.getElementById("notfound");
+    let html5QrCode = new Html5Qrcode("reader");
 
     function onScanSuccess(decodedText) {
-        html5QrcodeScanner.clear();
+        html5QrCode.stop().then(() => {
+            fetch(`/api/benefit/${decodedText}/`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'eligible') {
+                        hasil.classList.remove("d-none");
+                        document.getElementById("nama").innerText = data.data.nama;
+                        document.getElementById("departemen").innerText = data.data.departemen;
 
-        fetch(`/api/benefit/${decodedText}/`)
-        .then(res => res.json())
-        .then(data => {
-            if (data.status === 'eligible') {
-                document.getElementById("result").classList.remove("d-none");
-                document.getElementById("nama").innerText = data.data.nama;
-                document.getElementById("departemen").innerText = data.data.departemen;
+                        document.getElementById("btnAmbil").onclick = function () {
+                            ambilBenefit(data.data.no_id);
+                        };
 
-                document.getElementById("btnAmbil").onclick = function () {
-                    ambilBenefit(data.data.no_id);
-                }
-
-                let riwayat = data.data.riwayat;
-                const ul = document.getElementById("riwayat");
-                ul.innerHTML = '';
-                if (riwayat.length > 0) {
-                    riwayat.forEach(item => {
-                        const li = document.createElement("li");
-                        li.className = "list-group-item";
-                        li.innerText = `${item.jenis} - ${item.tanggal}`;
-                        ul.appendChild(li);
-                    });
-                } else {
-                    ul.innerHTML = '<li class="list-group-item">Belum ada riwayat.</li>';
-                }
-
-            } else {
-                document.getElementById("notfound").classList.remove("d-none");
-            }
+                        let riwayat = data.data.riwayat;
+                        const ul = document.getElementById("riwayat");
+                        ul.innerHTML = '';
+                        if (riwayat.length > 0) {
+                            riwayat.forEach(item => {
+                                const li = document.createElement("li");
+                                li.className = "list-group-item";
+                                li.innerText = `${item.jenis} - ${item.tanggal}`;
+                                ul.appendChild(li);
+                            });
+                        } else {
+                            ul.innerHTML = '<li class="list-group-item">Belum ada riwayat.</li>';
+                        }
+                    } else {
+                        notfound.classList.remove("d-none");
+                    }
+                });
+        }).catch(err => {
+            console.error("Stop kamera gagal:", err);
         });
     }
 
@@ -86,10 +89,20 @@
         });
     }
 
-    html5QrcodeScanner.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        onScanSuccess
-    );
+    Html5Qrcode.getCameras().then(cameras => {
+        if (cameras && cameras.length) {
+            html5QrCode.start(
+                { facingMode: "environment" },
+                { fps: 10, qrbox: { width: 250, height: 250 } },
+                onScanSuccess
+            ).catch(err => {
+                console.error("Scanner gagal dimulai:", err);
+            });
+        } else {
+            alert("Kamera tidak ditemukan.");
+        }
+    }).catch(err => {
+        console.error("Gagal mendapatkan kamera:", err);
+    });
 </script>
 {% endblock %}

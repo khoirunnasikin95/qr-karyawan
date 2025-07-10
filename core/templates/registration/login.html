@@ -2,8 +2,14 @@
 {% load static %}
 
 {% block content %}
-<div class="min-vh-100 d-flex justify-content-center align-items-center bg-light">
-  <div class="card shadow-lg border-0 rounded-4 p-4" style="min-width: 350px; max-width: 400px;">
+<div class="d-flex justify-content-center align-items-center" style="min-height: 100vh; background-color: #f7f9fc;">
+  <div class="card shadow-lg border-0 rounded-4 p-4 w-100" style="max-width: 400px;">
+    
+    <!-- Logo -->
+    <div class="text-center mb-3">
+      <img src="{% static 'images/logo.svg' %}" alt="Logo" style="height: 120px;" class="img-fluid">
+    </div>
+
     <div class="text-center mb-4">
       <h4 class="fw-bold text-primary">Selamat Datang</h4>
       <p class="text-muted mb-0">Silakan masuk untuk melanjutkan</p>
