@@ -7,7 +7,7 @@ from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required, user_passes_test, permission_required
 from django.contrib import messages
 from django.contrib.auth.models import User, Group
-from .models import Karyawan, Benefit, Kedisiplinan, SuratPeringatan
+from .models import Karyawan, Benefit, Kedisiplinan, SuratPeringatan, PenerimaBenefit
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.dateparse import parse_date
 from django.http import HttpResponse
@@ -158,10 +158,6 @@ def upload_karyawan_excel(request):
 
 
 #benefit-###############################################################################################################
-@login_required
-def rekap_benefit(request):
-    # Untuk sementara: tampilkan halaman kosong
-    return render(request, 'rekap/benefit.html')
 
 @permission_required('core.can_scan_benefit')
 def benefit_page(request):
@@ -171,22 +167,26 @@ def benefit_page(request):
 def api_benefit(request, no_id):
     try:
         karyawan = Karyawan.objects.get(no_id=no_id)
+        penerima = PenerimaBenefit.objects.filter(karyawan=karyawan)
 
-        # Contoh logika: semua karyawan berhak ambil benefit
-        status = 'eligible'
+        if not penerima.exists():
+            return JsonResponse({'status': 'not_eligible'})
 
-        riwayat = list(
-            Benefit.objects.filter(karyawan=karyawan)
-            .order_by('-tanggal')
-            .values('jenis', 'tanggal')[:5]
-        )
+        jenis_list = list(penerima.values_list('jenis', flat=True))
 
-        return JsonResponse({'status': status, 'data': {
-            'nama': karyawan.nama,
-            'departemen': karyawan.departemen,
-            'no_id': karyawan.no_id,
-            'riwayat': riwayat,
-        }})
+        riwayat = Benefit.objects.filter(karyawan=karyawan).order_by('-tanggal')[:5]
+        riwayat_data = list(riwayat.values('jenis', 'tanggal'))
+
+        return JsonResponse({
+            'status': 'eligible',
+            'data': {
+                'nama': karyawan.nama,
+                'departemen': karyawan.departemen,
+                'no_id': karyawan.no_id,
+                'jenis': jenis_list,
+                'riwayat': riwayat_data
+            }
+        })
     except Karyawan.DoesNotExist:
         return JsonResponse({'status': 'not_found'})
 
@@ -194,25 +194,27 @@ def api_benefit(request, no_id):
 def take_benefit(request):
     if request.method == 'POST':
         no_id = request.POST.get('no_id')
-        jenis = request.POST.get('jenis')  # susu / telur / dst
+        jenis = request.POST.get('jenis')
 
         try:
             karyawan = Karyawan.objects.get(no_id=no_id)
+
+            if not PenerimaBenefit.objects.filter(karyawan=karyawan, jenis=jenis).exists():
+                return JsonResponse({'success': False, 'message': 'Tidak berhak menerima benefit'})
+
+            if Benefit.objects.filter(karyawan=karyawan, jenis=jenis).exists():
+                return JsonResponse({'success': False, 'message': 'Sudah pernah ambil'})
+
             Benefit.objects.create(karyawan=karyawan, jenis=jenis)
             return JsonResponse({'success': True})
+
         except Karyawan.DoesNotExist:
             return JsonResponse({'success': False, 'message': 'ID tidak ditemukan'})
+
         
-@user_passes_test(lambda u: u.is_superuser or u.groups.filter(name="Administrator").exists())
-def rekap_benefit(request):
-    from .models import Benefit
-    data = Benefit.objects.select_related('karyawan').order_by('-tanggal')
-    return render(request, 'rekap/benefit.html', {'data': data})
 
 @user_passes_test(lambda u: u.is_superuser or u.groups.filter(name="Administrator").exists())
 def rekap_benefit(request):
-    from .models import Benefit
-
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
     data = Benefit.objects.select_related('karyawan').order_by('-tanggal')
@@ -228,8 +230,6 @@ def rekap_benefit(request):
 
 @user_passes_test(lambda u: u.is_superuser or u.groups.filter(name="Administrator").exists())
 def export_benefit_excel(request):
-    from .models import Benefit
-
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
     data = Benefit.objects.select_related('karyawan').order_by('-tanggal')
@@ -271,24 +271,14 @@ def export_benefit_excel(request):
     return response
 
 def benefit_list(request):
-    if request.method == 'POST' and request.FILES.get('excel_file'):
-        df = pd.read_excel(request.FILES['excel_file'])
+    data_taken = Benefit.objects.select_related('karyawan').order_by('-tanggal')
+    data_penerima = PenerimaBenefit.objects.select_related('karyawan')
 
-        for _, row in df.iterrows():
-            try:
-                karyawan = Karyawan.objects.get(no_id=row.get('no_id'))
-                Benefit.objects.create(
-                    karyawan=karyawan,
-                    jenis=row.get('jenis'),
-                    keterangan=row.get('keterangan')
-                )
-            except Karyawan.DoesNotExist:
-                continue
+    return render(request, 'rekap/benefit.html', {
+        'data_taken': data_taken,
+        'data_penerima': data_penerima
+    })
 
-        messages.success(request, "Data Benefit berhasil diunggah.")
-
-    data = Benefit.objects.select_related('karyawan').order_by('-tanggal')
-    return render(request, 'rekap/benefit.html', {'data': data})
 
 @login_required
 @user_passes_test(lambda u: u.is_superuser or u.groups.filter(name='Administrator').exists())
@@ -302,7 +292,8 @@ def upload_benefit_excel(request):
                 Benefit.objects.create(
                     karyawan=karyawan,
                     jenis=row.get('jenis'),
-                    keterangan=row.get('keterangan')
+                    keterangan=row.get('keterangan'),
+                    tanggal=None  # default kosong
                 )
             except Karyawan.DoesNotExist:
                 continue
@@ -312,6 +303,33 @@ def upload_benefit_excel(request):
 
     return redirect('benefit_list')
 
+@login_required
+@user_passes_test(lambda u: u.is_superuser or u.groups.filter(name='Administrator').exists())
+def upload_penerima_excel(request):
+    if request.method == 'POST' and request.FILES.get('excel_file'):
+        df = pd.read_excel(request.FILES['excel_file'])
+        print("Header kolom Excel:", df.columns)  # debug
+
+        for _, row in df.iterrows():
+            try:
+                print("Proses:", row.get('no_id'), row.get('jenis'))
+                karyawan = Karyawan.objects.get(no_id=row.get('no_id'))
+                PenerimaBenefit.objects.update_or_create(
+                    karyawan=karyawan,
+                    jenis=row.get('jenis'),
+                    defaults={'keterangan': row.get('keterangan')}
+                )
+            except Karyawan.DoesNotExist:
+                print("Karyawan tidak ditemukan:", row.get('no_id'))
+                continue
+            except Exception as e:
+                print("Error lain:", e)
+
+        messages.success(request, "Data penerima benefit berhasil diunggah.")
+        return redirect('benefit_list')
+
+    return redirect('benefit_list')
+#-----------------------------------------------------------------------------------------------------------
 @login_required
 @user_passes_test(lambda u: u.is_superuser or u.groups.filter(name='Administrator').exists())
 def upload_sp_excel(request):
@@ -359,11 +377,6 @@ def upload_kedisiplinan_excel(request):
         return redirect('sp_list')  # atau halaman lain sesuai kebutuhan
     
     return render(request, 'rekap/kedisiplinan_upload.html')
-
-
-@permission_required('core.can_scan_kedisiplinan')
-def kedisiplinan_page(request):
-    return render(request, 'scan/kedisiplinan.html')
 
 
 @permission_required('core.can_scan_kedisiplinan')

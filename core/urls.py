@@ -18,8 +18,11 @@ urlpatterns = [
     path('scan/benefit/', views.benefit_page, name='benefit'),
     path('api/benefit/<str:no_id>/', views.api_benefit, name='api_benefit'),
     path('api/benefit/take/', views.take_benefit, name='take_benefit'),
-    path('benefit/upload/', views.upload_benefit_excel, name='upload_benefit_excel'),
     path('benefit/', views.benefit_list, name='benefit_list'),
+    path('rekap/benefit/', views.rekap_benefit, name='rekap_benefit'),
+    path('rekap/benefit/export/', views.export_benefit_excel, name='export_benefit_excel'),
+    path('benefit/upload/', views.upload_benefit_excel, name='upload_benefit_excel'),
+    path('benefit/upload-penerima/', views.upload_penerima_excel, name='upload_penerima_excel'),
 
     path('scan/kedisiplinan/', views.kedisiplinan_page, name='kedisiplinan'),
     path('api/kedisiplinan/<str:no_id>/', views.api_kedisiplinan, name='api_kedisiplinan'),
@@ -30,9 +33,5 @@ urlpatterns = [
     path('pengguna/', views.kelola_pengguna, name='kelola_pengguna'),
     path('pengguna/update/<int:user_id>/', views.update_grup_pengguna, name='update_grup_pengguna'),
     path('pengguna/toggle-status/<int:user_id>/', views.toggle_status_user, name='toggle_status_user'),
-
-    path('rekap/benefit/', views.rekap_benefit, name='rekap_benefit'),
-    path('rekap/benefit/export/', views.export_benefit_excel, name='export_benefit_excel'),
-    path('benefit/upload/', views.upload_benefit_excel, name='upload_benefit_excel'),
 
 ]   

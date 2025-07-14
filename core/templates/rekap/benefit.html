@@ -4,16 +4,6 @@
 {% block content %}
 <div class="container">
     <h4 class="fw-bold mb-4 text-center">Rekap Pengambilan Benefit</h4>
-    
-    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-    <form method="post" action="{% url 'upload_benefit_excel' %}" enctype="multipart/form-data" class="d-flex align-items-center gap-2">
-        {% csrf_token %}
-        <label class="btn btn-sm btn-primary mb-0">
-        <i class="bi bi-upload"></i> Upload Excel
-        <input type="file" name="excel_file" accept=".xlsx,.xls" hidden onchange="this.form.submit()">
-        </label>
-    </form>
-    </div>
 
     <!-- Filter Tanggal -->
     <form method="get" class="row g-2 align-items-end mb-3">
@@ -37,8 +27,9 @@
         {% endif %}
     </form>
 
-    <div class="table-responsive shadow-sm rounded">
-        <table id="benefitTable" class="table table-bordered table-striped">
+    <h5 class="fw-bold">Riwayat Pengambilan Benefit</h5>
+    <div class="table-responsive shadow-sm rounded mb-4">
+        <table id="benefitTakenTable" class="table table-bordered table-striped">
             <thead class="table-light">
                 <tr>
                     <th>Tanggal</th>
@@ -49,13 +40,48 @@
                 </tr>
             </thead>
             <tbody>
-                {% for b in data %}
+                {% for b in data_taken %}
                 <tr>
                     <td>{{ b.tanggal }}</td>
                     <td>{{ b.karyawan.no_id }}</td>
                     <td>{{ b.karyawan.nama }}</td>
                     <td>{{ b.karyawan.departemen }}</td>
                     <td>{{ b.jenis }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <h5 class="fw-bold">Daftar Keseluruhan Penerima Benefit</h5>
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <form method="post" action="{% url 'upload_penerima_excel' %}" enctype="multipart/form-data" class="d-flex align-items-center gap-2">
+            {% csrf_token %}
+            <label class="btn btn-sm btn-primary mb-0">
+                <i class="bi bi-upload"></i> Upload Excel
+                <input type="file" name="excel_file" accept=".xlsx,.xls" hidden onchange="this.form.submit()">
+            </label>
+        </form>
+    </div>
+    <div class="table-responsive shadow-sm rounded">
+        <table id="benefitPenerimaTable" class="table table-bordered table-striped">
+            <thead class="table-light">
+                <tr>
+                    <th>No ID</th>
+                    <th>Nama</th>
+                    <th>Departemen</th>
+                    <th>Benefit</th>
+                    <th>Keterangan</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in data_penerima %}
+                <tr>
+                    <td>{{ b.karyawan.no_id }}</td>
+                    <td>{{ b.karyawan.nama }}</td>
+                    <td>{{ b.karyawan.departemen }}</td>
+                    <td>{{ b.jenis }}</td>
+                    <td>{{ b.keterangan }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -79,7 +105,7 @@
 
 <script>
     $(document).ready(function () {
-        $('#benefitTable').DataTable({
+        $('#benefitTakenTable, #benefitPenerimaTable').DataTable({
             responsive: true,
             dom: 'Bfrtip',
             buttons: ['excel', 'pdf', 'print'],

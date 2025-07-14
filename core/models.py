@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils.timezone import now
 
 class Karyawan(models.Model):
     no_id = models.CharField(max_length=50, unique=True)  # ID dari QR
@@ -24,7 +25,7 @@ class Karyawan(models.Model):
         ]
 
 
-class Benefit(models.Model):
+class PenerimaBenefit(models.Model):
     JENIS_BENEFIT = [
         ('susu', 'Susu'),
         ('telur_susu', 'Telur + Susu'),
@@ -33,8 +34,15 @@ class Benefit(models.Model):
 
     karyawan = models.ForeignKey(Karyawan, on_delete=models.CASCADE)
     jenis = models.CharField(max_length=20, choices=JENIS_BENEFIT)
-    tanggal = models.DateField(auto_now_add=True)
     keterangan = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.karyawan.nama} - {self.jenis}"
+
+class Benefit(models.Model):
+    karyawan = models.ForeignKey(Karyawan, on_delete=models.CASCADE)
+    jenis = models.CharField(max_length=20)
+    tanggal = models.DateField(default=now)
 
     def __str__(self):
         return f"{self.karyawan.nama} - {self.jenis} ({self.tanggal})"
