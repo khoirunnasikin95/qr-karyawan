@@ -212,21 +212,22 @@ def take_benefit(request):
             return JsonResponse({'success': False, 'message': 'ID tidak ditemukan'})
 
         
-
-@user_passes_test(lambda u: u.is_superuser or u.groups.filter(name="Administrator").exists())
 def rekap_benefit(request):
-    start_date = request.GET.get('start_date')
-    end_date = request.GET.get('end_date')
-    data = Benefit.objects.select_related('karyawan').order_by('-tanggal')
+    return redirect('benefit_list')
+# @user_passes_test(lambda u: u.is_superuser or u.groups.filter(name="Administrator").exists())
+# def rekap_benefit(request):
+#     start_date = request.GET.get('start_date')
+#     end_date = request.GET.get('end_date')
+#     data = Benefit.objects.select_related('karyawan').order_by('-tanggal')
 
-    if start_date and end_date:
-        data = data.filter(tanggal__range=[start_date, end_date])
+#     if start_date and end_date:
+#         data = data.filter(tanggal__range=[start_date, end_date])
 
-    return render(request, 'rekap/benefit.html', {
-        'data': data,
-        'start_date': start_date,
-        'end_date': end_date
-    })
+#     return render(request, 'rekap/benefit.html', {
+#         'data': data,
+#         'start_date': start_date,
+#         'end_date': end_date
+#     })
 
 @user_passes_test(lambda u: u.is_superuser or u.groups.filter(name="Administrator").exists())
 def export_benefit_excel(request):
@@ -271,13 +272,22 @@ def export_benefit_excel(request):
     return response
 
 def benefit_list(request):
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+
     data_taken = Benefit.objects.select_related('karyawan').order_by('-tanggal')
     data_penerima = PenerimaBenefit.objects.select_related('karyawan')
 
+    if start_date and end_date:
+        data_taken = data_taken.filter(tanggal__range=[start_date, end_date])
+
     return render(request, 'rekap/benefit.html', {
         'data_taken': data_taken,
-        'data_penerima': data_penerima
+        'data_penerima': data_penerima,
+        'start_date': start_date,
+        'end_date': end_date,
     })
+
 
 
 @login_required
