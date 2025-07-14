@@ -74,15 +74,18 @@ def api_informasi(request, no_id):
     try:
         karyawan = Karyawan.objects.get(no_id=no_id)
         data = {
-            'nama': karyawan.nama,
-            'departemen': karyawan.departemen,
-            'no_bpjs': karyawan.no_bpjs,
-            'no_hp': karyawan.no_hp,
-            'akses_hp': 'Ya' if karyawan.akses_hp else 'Tidak',
+            "nama": karyawan.nama,
+            "departemen": karyawan.departemen,
+            "nik": karyawan.nik,
+            "bpjs_k": karyawan.bpjs_k,
+            "bpjs_tk": karyawan.bpjs_tk,
+            "no_hp": karyawan.no_hp,
+            "akses_hp": "Ya" if karyawan.akses_hp else "Tidak",
+            "akses_laptop": "Ya" if karyawan.akses_laptop else "Tidak",
         }
-        return JsonResponse({'status': 'ok', 'data': data})
+        return JsonResponse({"status": "ok", "data": data})
     except Karyawan.DoesNotExist:
-        return JsonResponse({'status': 'not_found'})
+        return JsonResponse({"status": "notfound"})
 
 @login_required
 @user_passes_test(lambda u: u.is_superuser or u.groups.filter(name='Administrator').exists())
