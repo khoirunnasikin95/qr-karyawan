@@ -25,6 +25,37 @@ from .models import Karyawan
 def is_admin(user):
     return user.groups.filter(name='Administrator').exists() or user.is_superuser
 
+# Toggle status pengguna
+@user_passes_test(is_admin)
+def toggle_status_user(request, user_id):
+    user = get_object_or_404(User, id=user_id)
+    user.is_active = not user.is_active
+    user.save()
+    messages.success(request, f"Status pengguna '{user.username}' berhasil diperbarui.")
+    return redirect('kelola_pengguna')
+
+
+# Halaman Kelola Pengguna################################################################################################################
+@user_passes_test(is_admin)
+def kelola_pengguna(request):
+    users = User.objects.all().order_by('username')
+    groups = Group.objects.all()
+    return render(request, 'akses/pengguna_list.html', {'users': users, 'groups': groups})
+
+
+@user_passes_test(is_admin)
+def update_grup_pengguna(request, user_id):
+    user = get_object_or_404(User, id=user_id)
+    if request.method == 'POST':
+        group_name = request.POST.get('group')
+        if group_name:
+            user.groups.clear()
+            user.groups.add(Group.objects.get(name=group_name))
+        return redirect('kelola_pengguna')
+    return redirect('kelola_pengguna')
+
+
+#dashboard--###############################################################################################################
 @login_required
 def dashboard(request):
     today = timezone.now().date()
@@ -42,33 +73,16 @@ def dashboard(request):
         'total_user': total_user
     })
 
+#informasi--###############################################################################################################
+# Akses berdasarkan permission
+@permission_required('core.can_scan_informasi')
+def informasi_page(request):
+    return render(request, 'scan/informasi.html')
+
 @user_passes_test(is_admin)
 def karyawan_list(request):
     karyawan = Karyawan.objects.all()
     return render(request, 'rekap/karyawan_list.html', {'karyawan': karyawan})
-
-@login_required
-def sp_list(request):
-    from django.utils import timezone
-    today = timezone.now().date()
-    start_date = today - timedelta(days=90)
-
-    sp = SuratPeringatan.objects.all().order_by('-tanggal_terbit')
-    kedisiplinan = Kedisiplinan.objects.filter(tanggal__range=(start_date, today)).order_by('-tanggal')
-
-    return render(request, 'rekap/sp_list.html', {
-        'sp': sp,
-        'kedisiplinan': kedisiplinan
-    })
-
-@login_required
-def rekap_benefit(request):
-    # Untuk sementara: tampilkan halaman kosong
-    return render(request, 'rekap/benefit.html')
-
-@permission_required('core.can_scan_informasi')
-def informasi_page(request):
-    return render(request, 'scan/informasi.html')
 
 def api_informasi(request, no_id):
     try:
@@ -118,54 +132,6 @@ def karyawan_tambah(request):
     return render(request, 'rekap/karyawan_tambah.html')
 
 @login_required
-@user_passes_test(lambda u: u.is_superuser or u.groups.filter(name='Administrator').exists())
-def upload_sp_excel(request):
-    if request.method == 'POST' and request.FILES.get('excel_file'):
-        df = pd.read_excel(request.FILES['excel_file'])
-
-        for _, row in df.iterrows():
-            try:
-                karyawan = Karyawan.objects.get(no_id=row.get('no_id'))
-                SuratPeringatan.objects.create(
-                    karyawan=karyawan,
-                    jenis=row.get('jenis_sp'),
-                    tanggal_terbit=row.get('tanggal_terbit'),
-                    tanggal_berlaku_sampai=row.get('tanggal_berlaku_sampai'),
-                    keterangan=row.get('keterangan')
-                )
-            except Karyawan.DoesNotExist:
-                continue
-
-        messages.success(request, "Data Surat Peringatan berhasil diunggah.")
-        return redirect('sp_list')
-    
-    return render(request, 'rekap/sp_upload.html')
-
-@login_required
-@user_passes_test(lambda u: u.is_superuser or u.groups.filter(name='Administrator').exists())
-def upload_kedisiplinan_excel(request):
-    if request.method == 'POST' and request.FILES.get('excel_file'):
-        df = pd.read_excel(request.FILES['excel_file'])
-
-        for _, row in df.iterrows():
-            try:
-                karyawan = Karyawan.objects.get(no_id=row.get('no_id'))
-                Kedisiplinan.objects.create(
-                    karyawan=karyawan,
-                    tanggal=row.get('tanggal'),
-                    jenis=row.get('jenis_kedisiplinan'),
-                    keterangan=None  # atau bisa ambil dari kolom jika ada
-                )
-            except Karyawan.DoesNotExist:
-                continue
-
-        messages.success(request, "Data Kedisiplinan berhasil diunggah.")
-        return redirect('sp_list')  # atau halaman lain sesuai kebutuhan
-    
-    return render(request, 'rekap/kedisiplinan_upload.html')
-
-
-@login_required
 @user_passes_test(is_admin)
 def upload_karyawan_excel(request):
     if request.method == 'POST' and request.FILES.get('excel_file'):
@@ -190,67 +156,17 @@ def upload_karyawan_excel(request):
 
     return render(request, 'rekap/karyawan_upload.html')
 
-# API Informasi
-def api_informasi(request, no_id):
-    try:
-        karyawan = Karyawan.objects.get(no_id=no_id)
-        data = {
-            'nama': karyawan.nama,
-            'departemen': karyawan.departemen,
-            'no_bpjs': karyawan.no_bpjs,
-            'no_hp': karyawan.no_hp,
-            'akses_hp': 'Ya' if karyawan.akses_hp else 'Tidak',
-        }
-        return JsonResponse({'status': 'ok', 'data': data})
-    except Karyawan.DoesNotExist:
-        return JsonResponse({'status': 'not_found'})
 
-# Toggle status pengguna
-@user_passes_test(is_admin)
-def toggle_status_user(request, user_id):
-    user = get_object_or_404(User, id=user_id)
-    user.is_active = not user.is_active
-    user.save()
-    messages.success(request, f"Status pengguna '{user.username}' berhasil diperbarui.")
-    return redirect('kelola_pengguna')
-
-
-# Halaman Kelola Pengguna
-@user_passes_test(is_admin)
-def kelola_pengguna(request):
-    users = User.objects.all().order_by('username')
-    groups = Group.objects.all()
-    return render(request, 'akses/pengguna_list.html', {'users': users, 'groups': groups})
-
-
-@user_passes_test(is_admin)
-def update_grup_pengguna(request, user_id):
-    user = get_object_or_404(User, id=user_id)
-    if request.method == 'POST':
-        group_name = request.POST.get('group')
-        if group_name:
-            user.groups.clear()
-            user.groups.add(Group.objects.get(name=group_name))
-        return redirect('kelola_pengguna')
-    return redirect('kelola_pengguna')
-
-
-# Akses berdasarkan permission
-@permission_required('core.can_scan_informasi')
-def informasi_page(request):
-    return render(request, 'scan/informasi.html')
+#benefit-------------------------------------------------------------------------------------------------
+@login_required
+def rekap_benefit(request):
+    # Untuk sementara: tampilkan halaman kosong
+    return render(request, 'rekap/benefit.html')
 
 @permission_required('core.can_scan_benefit')
 def benefit_page(request):
     return render(request, 'scan/benefit.html')
 
-@permission_required('core.can_scan_kedisiplinan')
-def kedisiplinan_page(request):
-    return render(request, 'scan/kedisiplinan.html')
-
-@permission_required('core.can_scan_benefit')
-def benefit_page(request):
-    return render(request, 'scan/benefit.html')
 
 def api_benefit(request, no_id):
     try:
@@ -286,40 +202,7 @@ def take_benefit(request):
             return JsonResponse({'success': True})
         except Karyawan.DoesNotExist:
             return JsonResponse({'success': False, 'message': 'ID tidak ditemukan'})
-
-@permission_required('core.can_scan_kedisiplinan')
-def kedisiplinan_page(request):
-    return render(request, 'scan/kedisiplinan.html')
-
-def api_kedisiplinan(request, no_id):
-    try:
-        karyawan = Karyawan.objects.get(no_id=no_id)
-        end_date = timezone.now().date()
-        start_date = end_date - timedelta(days=90)
-
-        records = Kedisiplinan.objects.filter(karyawan=karyawan, tanggal__range=(start_date, end_date))
-        sp_aktif = SuratPeringatan.objects.filter(
-            karyawan=karyawan,
-            tanggal_berlaku_sampai__gte=end_date
-        ).order_by('-tanggal_terbit')
-
-        return JsonResponse({
-            'status': 'ok',
-            'data': {
-                'nama': karyawan.nama,
-                'departemen': karyawan.departemen,
-                'A': records.filter(jenis='A').count(),
-                'DT': records.filter(jenis='DT').count(),
-                'PC': records.filter(jenis='PC').count(),
-                'CX': records.filter(jenis='CX').count(),
-                'sp': list(sp_aktif.values('jenis', 'tanggal_terbit', 'tanggal_berlaku_sampai')),
-            }
-        })
-
-    except Karyawan.DoesNotExist:
-        return JsonResponse({'status': 'not_found'})
-
-
+        
 @user_passes_test(lambda u: u.is_superuser or u.groups.filter(name="Administrator").exists())
 def rekap_benefit(request):
     from .models import Benefit
@@ -426,3 +309,103 @@ def upload_benefit_excel(request):
         return redirect('benefit_list')  # sesuaikan jika URL list benefit berbeda
 
     return redirect('benefit_list')
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser or u.groups.filter(name='Administrator').exists())
+def upload_sp_excel(request):
+    if request.method == 'POST' and request.FILES.get('excel_file'):
+        df = pd.read_excel(request.FILES['excel_file'])
+
+        for _, row in df.iterrows():
+            try:
+                karyawan = Karyawan.objects.get(no_id=row.get('no_id'))
+                SuratPeringatan.objects.create(
+                    karyawan=karyawan,
+                    jenis=row.get('jenis_sp'),
+                    tanggal_terbit=row.get('tanggal_terbit'),
+                    tanggal_berlaku_sampai=row.get('tanggal_berlaku_sampai'),
+                    keterangan=row.get('keterangan')
+                )
+            except Karyawan.DoesNotExist:
+                continue
+
+        messages.success(request, "Data Surat Peringatan berhasil diunggah.")
+        return redirect('sp_list')
+    
+    return render(request, 'rekap/sp_upload.html')
+
+#kedisiplinan-------------------------------------------------------------------------------------------------
+@login_required
+@user_passes_test(lambda u: u.is_superuser or u.groups.filter(name='Administrator').exists())
+def upload_kedisiplinan_excel(request):
+    if request.method == 'POST' and request.FILES.get('excel_file'):
+        df = pd.read_excel(request.FILES['excel_file'])
+
+        for _, row in df.iterrows():
+            try:
+                karyawan = Karyawan.objects.get(no_id=row.get('no_id'))
+                Kedisiplinan.objects.create(
+                    karyawan=karyawan,
+                    tanggal=row.get('tanggal'),
+                    jenis=row.get('jenis_kedisiplinan'),
+                    keterangan=None  # atau bisa ambil dari kolom jika ada
+                )
+            except Karyawan.DoesNotExist:
+                continue
+
+        messages.success(request, "Data Kedisiplinan berhasil diunggah.")
+        return redirect('sp_list')  # atau halaman lain sesuai kebutuhan
+    
+    return render(request, 'rekap/kedisiplinan_upload.html')
+
+
+@permission_required('core.can_scan_kedisiplinan')
+def kedisiplinan_page(request):
+    return render(request, 'scan/kedisiplinan.html')
+
+
+@permission_required('core.can_scan_kedisiplinan')
+def kedisiplinan_page(request):
+    return render(request, 'scan/kedisiplinan.html')
+
+def api_kedisiplinan(request, no_id):
+    try:
+        karyawan = Karyawan.objects.get(no_id=no_id)
+        end_date = timezone.now().date()
+        start_date = end_date - timedelta(days=90)
+
+        records = Kedisiplinan.objects.filter(karyawan=karyawan, tanggal__range=(start_date, end_date))
+        sp_aktif = SuratPeringatan.objects.filter(
+            karyawan=karyawan,
+            tanggal_berlaku_sampai__gte=end_date
+        ).order_by('-tanggal_terbit')
+
+        return JsonResponse({
+            'status': 'ok',
+            'data': {
+                'nama': karyawan.nama,
+                'departemen': karyawan.departemen,
+                'A': records.filter(jenis='A').count(),
+                'DT': records.filter(jenis='DT').count(),
+                'PC': records.filter(jenis='PC').count(),
+                'CX': records.filter(jenis='CX').count(),
+                'sp': list(sp_aktif.values('jenis', 'tanggal_terbit', 'tanggal_berlaku_sampai')),
+            }
+        })
+
+    except Karyawan.DoesNotExist:
+        return JsonResponse({'status': 'not_found'})
+    
+@login_required
+def sp_list(request):
+    from django.utils import timezone
+    today = timezone.now().date()
+    start_date = today - timedelta(days=90)
+
+    sp = SuratPeringatan.objects.all().order_by('-tanggal_terbit')
+    kedisiplinan = Kedisiplinan.objects.filter(tanggal__range=(start_date, today)).order_by('-tanggal')
+
+    return render(request, 'rekap/sp_list.html', {
+        'sp': sp,
+        'kedisiplinan': kedisiplinan
+    })
