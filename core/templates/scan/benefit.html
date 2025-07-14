@@ -13,8 +13,11 @@
     <h5 id="nama"></h5>
     <p><strong>Departemen:</strong> <span id="departemen"></span></p>
 
-    <button id="btnAmbil" class="btn btn-success">Ambil Benefit</button>
-    <button class="btn btn-outline-secondary ms-2" onclick="window.location.reload()">Scan Ulang</button>
+    <div id="btnArea" class="mb-2 d-none">
+        <button id="btnAmbil" class="btn btn-success">Ambil Benefit</button>
+    </div>
+
+    <button class="btn btn-outline-secondary" onclick="window.location.reload()">Scan Ulang</button>
 
     <hr>
     <div class="mt-3">
@@ -30,10 +33,19 @@
 
 <!-- HTML5 QRCode Scanner -->
 <script src="https://unpkg.com/html5-qrcode"></script>
+
 <script>
     const hasil = document.getElementById("result");
     const notfound = document.getElementById("notfound");
+    const btnArea = document.getElementById("btnArea");
+    const btnAmbil = document.getElementById("btnAmbil");
     let html5QrCode = new Html5Qrcode("reader");
+
+    function speak(text) {
+        const msg = new SpeechSynthesisUtterance(text);
+        msg.lang = "id-ID";
+        window.speechSynthesis.speak(msg);
+    }
 
     function onScanSuccess(decodedText) {
         html5QrCode.stop().then(() => {
@@ -45,11 +57,30 @@
                         document.getElementById("nama").innerText = data.data.nama;
                         document.getElementById("departemen").innerText = data.data.departemen;
 
-                        document.getElementById("btnAmbil").onclick = function () {
-                            ambilBenefit(data.data.no_id);
-                        };
+                        const jenisBenefit = data.data.jenis || [];
 
-                        let riwayat = data.data.riwayat;
+                        // Tentukan kalimat dan ucapan
+                        let pesan = "Anda tidak mendapatkan benefit";
+                        if (jenisBenefit.includes("susu") && jenisBenefit.includes("telur")) {
+                            pesan = "Anda mendapatkan susu dan telur";
+                        } else if (jenisBenefit.includes("susu")) {
+                            pesan = "Anda mendapatkan susu";
+                        } else if (jenisBenefit.includes("telur")) {
+                            pesan = "Anda mendapatkan telur";
+                        }
+
+                        speak(pesan);
+
+                        // Tampilkan tombol jika berhak
+                        if (jenisBenefit.length > 0) {
+                            btnArea.classList.remove("d-none");
+                            btnAmbil.onclick = () => ambilBenefit(data.data.no_id, jenisBenefit);
+                        } else {
+                            btnArea.classList.add("d-none");
+                        }
+
+                        // Riwayat
+                        let riwayat = data.data.riwayat || [];
                         const ul = document.getElementById("riwayat");
                         ul.innerHTML = '';
                         if (riwayat.length > 0) {
@@ -64,6 +95,7 @@
                         }
                     } else {
                         notfound.classList.remove("d-none");
+                        speak("ID tidak ditemukan atau tidak memiliki benefit");
                     }
                 });
         }).catch(err => {
@@ -71,23 +103,25 @@
         });
     }
 
-    function ambilBenefit(no_id) {
-        fetch("/api/benefit/take/", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded",
-                "X-CSRFToken": "{{ csrf_token }}"
-            },
-            body: `no_id=${no_id}&jenis=susu`
-        })
-        .then(res => res.json())
-        .then(res => {
-            if (res.success) {
-                alert("Benefit berhasil dicatat.");
+    function ambilBenefit(no_id, jenisList) {
+        jenisList.forEach(jenis => {
+            fetch("/api/benefit/take/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "X-CSRFToken": "{{ csrf_token }}"
+                },
+                body: `no_id=${no_id}&jenis=${jenis}`
+            })
+            .then(res => res.json())
+            .then(res => {
+                if (res.success) {
+                    alert(`Benefit ${jenis} berhasil dicatat.`);
+                } else {
+                    alert(res.message || `Gagal mencatat benefit ${jenis}.`);
+                }
                 window.location.reload();
-            } else {
-                alert(res.message || "Gagal mencatat benefit.");
-            }
+            });
         });
     }
 
