@@ -4,8 +4,8 @@
     <h5 class="fw-bold">Scan Kartu Karyawan (Informasi)</h5>
 </div>
 
-<div class="d-flex justify-content-center">
-    <video id="preview" class="border rounded shadow-sm" style="width: 90vw; max-width: 400px; height: auto;"></video>
+<div class="d-flex flex-column align-items-center">
+    <video id="preview" width="300" height="250" class="border rounded shadow-sm"></video>
 </div>
 
 <div id="hasil" class="mt-4 text-center d-none">
@@ -30,48 +30,47 @@
     <button class="btn btn-outline-danger" onclick="window.location.reload()">Scan Ulang</button>
 </div>
 
-<!-- html5-qrcode -->
-<script src="https://unpkg.com/html5-qrcode"></script>
+<!-- ZXing Scanner -->
+<script src="https://unpkg.com/@zxing/browser@latest"></script>
 <script>
     const hasil = document.getElementById("hasil");
     const notfound = document.getElementById("notfound");
+    const previewElem = document.getElementById("preview");
 
-    const html5QrCode = new Html5Qrcode("reader");
+    const codeReader = new ZXing.BrowserMultiFormatReader();
 
-    function onScanSuccess(decodedText, decodedResult) {
-        html5QrCode.stop();
-        fetch(`/api/informasi/${decodedText}/`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'ok') {
-                    hasil.classList.remove("d-none");
-                    document.getElementById("nama").innerText = data.data.nama;
-                    document.getElementById("departemen").innerText = data.data.departemen;
-                    document.getElementById("nik").innerText = data.data.nik || '-';
-                    document.getElementById("bpjs_k").innerText = data.data.bpjs_k || '-';
-                    document.getElementById("bpjs_tk").innerText = data.data.bpjs_tk || '-';
-                    document.getElementById("no_hp").innerText = data.data.no_hp || '-';
-                    document.getElementById("akses_hp").innerText = data.data.akses_hp;
-                    document.getElementById("akses_laptop").innerText = data.data.akses_laptop;
-                } else {
-                    notfound.classList.remove("d-none");
+    ZXing.BrowserMultiFormatReader.listVideoInputDevices()
+        .then(videoInputDevices => {
+            const selectedDeviceId = videoInputDevices[0]?.deviceId;
+
+            codeReader.decodeFromVideoDevice(selectedDeviceId, previewElem, (result, err) => {
+                if (result) {
+                    const no_id = result.text;
+                    codeReader.reset();
+
+                    fetch(`/api/informasi/${no_id}/`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status === 'ok') {
+                                hasil.classList.remove("d-none");
+                                document.getElementById("nama").innerText = data.data.nama;
+                                document.getElementById("departemen").innerText = data.data.departemen;
+                                document.getElementById("nik").innerText = data.data.nik || '-';
+                                document.getElementById("bpjs_k").innerText = data.data.bpjs_k || '-';
+                                document.getElementById("bpjs_tk").innerText = data.data.bpjs_tk || '-';
+                                document.getElementById("no_hp").innerText = data.data.no_hp || '-';
+                                document.getElementById("akses_hp").innerText = data.data.akses_hp;
+                                document.getElementById("akses_laptop").innerText = data.data.akses_laptop;
+                            } else {
+                                notfound.classList.remove("d-none");
+                            }
+                        });
                 }
             });
-    }
-
-    Html5Qrcode.getCameras().then(cameras => {
-        if (cameras && cameras.length) {
-            html5QrCode.start(
-                { facingMode: "environment" },
-                {
-                    fps: 10,
-                    qrbox: { width: 250, height: 250 }
-                },
-                onScanSuccess
-            ).catch(err => console.error("Gagal mulai scanner", err));
-        } else {
-            alert("Kamera tidak ditemukan.");
-        }
-    }).catch(err => console.error("Gagal mendapatkan kamera", err));
+        })
+        .catch(err => {
+            console.error("Camera Error:", err);
+            alert("Gagal mengakses kamera. Pastikan izin kamera sudah diberikan.");
+        });
 </script>
 {% endblock %}
