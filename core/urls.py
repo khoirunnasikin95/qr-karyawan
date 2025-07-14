@@ -31,5 +31,6 @@ urlpatterns = [
 
     path('rekap/benefit/', views.rekap_benefit, name='rekap_benefit'),
     path('rekap/benefit/export/', views.export_benefit_excel, name='export_benefit_excel'),
+    path('benefit/upload/', views.upload_benefit_excel, name='upload_benefit_excel'),
 
 ]   

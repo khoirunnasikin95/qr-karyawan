@@ -88,7 +88,7 @@ def api_informasi(request, no_id):
 @user_passes_test(lambda u: u.is_superuser or u.groups.filter(name='Administrator').exists())
 def karyawan_tambah(request):
     if request.method == 'POST':
-        id_card = request.POST.get('id_card')
+        no_id = request.POST.get('no_id')
         nama = request.POST.get('nama')
         departemen = request.POST.get('departemen')
         nik = request.POST.get('nik')
@@ -99,7 +99,7 @@ def karyawan_tambah(request):
         akses_laptop = bool(request.POST.get('akses_laptop'))
 
         Karyawan.objects.create(
-            id_card=id_card,
+            no_id=no_id,
             nama=nama,
             departemen=departemen,
             nik=nik,
@@ -122,7 +122,7 @@ def upload_sp_excel(request):
 
         for _, row in df.iterrows():
             try:
-                karyawan = Karyawan.objects.get(id_card=row.get('no_id'))
+                karyawan = Karyawan.objects.get(no_id=row.get('no_id'))
                 SuratPeringatan.objects.create(
                     karyawan=karyawan,
                     jenis=row.get('jenis_sp'),
@@ -146,7 +146,7 @@ def upload_kedisiplinan_excel(request):
 
         for _, row in df.iterrows():
             try:
-                karyawan = Karyawan.objects.get(id_card=row.get('no_id'))
+                karyawan = Karyawan.objects.get(no_id=row.get('no_id'))
                 Kedisiplinan.objects.create(
                     karyawan=karyawan,
                     tanggal=row.get('tanggal'),
@@ -383,3 +383,43 @@ def export_benefit_excel(request):
 
     wb.save(response)
     return response
+
+def benefit_list(request):
+    if request.method == 'POST' and request.FILES.get('excel_file'):
+        df = pd.read_excel(request.FILES['excel_file'])
+
+        for _, row in df.iterrows():
+            try:
+                karyawan = Karyawan.objects.get(no_id=row.get('no_id'))
+                Benefit.objects.create(
+                    karyawan=karyawan,
+                    jenis=row.get('jenis'),
+                    keterangan=row.get('keterangan')
+                )
+            except Karyawan.DoesNotExist:
+                continue
+
+        messages.success(request, "Data Benefit berhasil diunggah.")
+
+    data = Benefit.objects.select_related('karyawan').order_by('-tanggal')
+    return render(request, 'rekap/benefit.html', {'data': data})
+
+def upload_benefit_excel(request):
+    if request.method == 'POST' and request.FILES.get('excel_file'):
+        df = pd.read_excel(request.FILES['excel_file'])
+
+        for _, row in df.iterrows():
+            try:
+                karyawan = Karyawan.objects.get(no_id=row.get('no_id'))
+                Benefit.objects.create(
+                    karyawan=karyawan,
+                    jenis=row.get('jenis'),
+                    keterangan=row.get('keterangan')
+                )
+            except Karyawan.DoesNotExist:
+                continue
+
+        messages.success(request, "Data Benefit berhasil diunggah.")
+        return redirect('benefit_list')  # sesuaikan jika URL list benefit berbeda
+
+    return redirect('benefit_list')

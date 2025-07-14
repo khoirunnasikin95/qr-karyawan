@@ -14,7 +14,7 @@ class Karyawan(models.Model):
     akses_laptop = models.BooleanField("Izin Membawa Laptop", default=False)
 
     def __str__(self):
-        return f"{self.id_card} - {self.nama}"
+        return f"{self.no_id}- {self.nama}"
 
     class Meta:
         permissions = [
