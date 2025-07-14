@@ -13,6 +13,14 @@
     <h5 id="nama"></h5>
     <p><strong>Departemen:</strong> <span id="departemen"></span></p>
 
+    <!-- Notifikasi hasil scan -->
+    <div class="mt-3 text-center">
+        <div id="scanMessage" class="alert d-none" role="alert">
+            <i id="scanIcon" class="me-2 fs-4"></i>
+            <span id="scanText" class="fw-bold fs-5"></span>
+        </div>
+    </div>
+
     <div id="btnArea" class="mb-2 d-none">
         <button id="btnAmbil" class="btn btn-success">Ambil Benefit</button>
     </div>
@@ -31,6 +39,9 @@
     <button class="btn btn-outline-danger" onclick="window.location.reload()">Scan Ulang</button>
 </div>
 
+<!-- Bootstrap Icons -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+
 <!-- HTML5 QRCode Scanner -->
 <script src="https://unpkg.com/html5-qrcode"></script>
 
@@ -47,72 +58,87 @@
         window.speechSynthesis.speak(msg);
     }
 
-function onScanSuccess(decodedText) { 
-    html5QrCode.stop().then(() => {
-        fetch(`/api/benefit/${decodedText}/`)
-            .then(res => res.json())
-            .then(data => {
-                if (data.status === 'eligible') {
-                    // Tampilkan elemen hasil
-                    hasil.classList.remove("d-none");
-                    notfound.classList.add("d-none");
+    function showScanMessage(jenisList) {
+        const alertBox = document.getElementById("scanMessage");
+        const icon = document.getElementById("scanIcon");
+        const text = document.getElementById("scanText");
 
-                    // Tampilkan info karyawan
-                    document.getElementById("nama").innerText = data.data.nama;
-                    document.getElementById("departemen").innerText = data.data.departemen;
+        alertBox.classList.remove("d-none", "alert-success", "alert-danger", "alert-warning");
+        icon.className = "me-2 fs-4";
+        let pesan = "";
 
-                    // Tentukan jenis benefit
-                    const jenisBenefit = data.data.jenis || [];  // sekarang array
-                    let pesan = "Anda tidak mendapatkan benefit";
+        if (jenisList.includes("telur_susu")) {
+            alertBox.classList.add("alert-success");
+            icon.innerText = "🥚🥛";
+            pesan = "Anda mendapatkan telur dan susu";
+        } else if (jenisList.includes("susu")) {
+            alertBox.classList.add("alert-success");
+            icon.innerText = "🥛";
+            pesan = "Anda mendapatkan susu";
+        } else if (jenisList.includes("lainnya")) {
+            alertBox.classList.add("alert-success");
+            icon.innerText = "🎁";
+            pesan = "Anda mendapatkan benefit lainnya";
+        } else {
+            alertBox.classList.add("alert-warning");
+            icon.classList.add("bi-exclamation-triangle-fill");
+            icon.innerText = ""; // reset emoji
+            pesan = "Anda tidak mendapatkan benefit";
+        }
 
-                    if (jenisBenefit.length > 0) {
-                        if (jenisBenefit.includes("telur_susu")) {
-                            pesan = "Anda mendapatkan susu dan telur";
-                        } else if (jenisBenefit.includes("susu")) {
-                            pesan = "Anda mendapatkan susu";
-                        } else if (jenisBenefit.includes("lainnya")) {
-                            pesan = "Anda mendapatkan benefit lainnya";
+        text.innerText = pesan;
+        speak(pesan);
+    }
+
+    function onScanSuccess(decodedText) {
+        html5QrCode.stop().then(() => {
+            fetch(`/api/benefit/${decodedText}/`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'eligible') {
+                        hasil.classList.remove("d-none");
+                        notfound.classList.add("d-none");
+
+                        document.getElementById("nama").innerText = data.data.nama;
+                        document.getElementById("departemen").innerText = data.data.departemen;
+
+                        const jenisBenefit = data.data.jenis || [];
+
+                        showScanMessage(jenisBenefit);
+
+                        if (jenisBenefit.length > 0) {
+                            btnArea.classList.remove("d-none");
+                            btnAmbil.onclick = () => ambilBenefit(data.data.no_id, jenisBenefit);
+                        } else {
+                            btnArea.classList.add("d-none");
                         }
-                    }
 
-                    // Bicara
-                    speak(pesan);
-
-                    // Tampilkan tombol jika berhak
-                    if (jenisBenefit.length > 0) {
-                        btnArea.classList.remove("d-none");
-                        btnAmbil.onclick = () => ambilBenefit(data.data.no_id, jenisBenefit);
+                        const ul = document.getElementById("riwayat");
+                        ul.innerHTML = '';
+                        const riwayat = data.data.riwayat || [];
+                        if (riwayat.length > 0) {
+                            riwayat.forEach(item => {
+                                const li = document.createElement("li");
+                                li.className = "list-group-item";
+                                li.innerText = `${item.jenis} - ${item.tanggal}`;
+                                ul.appendChild(li);
+                            });
+                        } else {
+                            ul.innerHTML = '<li class="list-group-item">Belum ada riwayat.</li>';
+                        }
                     } else {
-                        btnArea.classList.add("d-none");
+                        hasil.classList.add("d-none");
+                        notfound.classList.remove("d-none");
+                        showScanMessage([]); // tampilkan warning
+                        speak("ID tidak ditemukan atau tidak memiliki benefit");
                     }
+                });
+        }).catch(err => {
+            console.error("Stop kamera gagal:", err);
+        });
+    }
 
-                    // Tampilkan riwayat
-                    const ul = document.getElementById("riwayat");
-                    ul.innerHTML = '';
-                    const riwayat = data.data.riwayat || [];
-                    if (riwayat.length > 0) {
-                        riwayat.forEach(item => {
-                            const li = document.createElement("li");
-                            li.className = "list-group-item";
-                            li.innerText = `${item.jenis} - ${item.tanggal}`;
-                            ul.appendChild(li);
-                        });
-                    } else {
-                        ul.innerHTML = '<li class="list-group-item">Belum ada riwayat.</li>';
-                    }
-                } else {
-                    hasil.classList.add("d-none");
-                    notfound.classList.remove("d-none");
-                    speak("ID tidak ditemukan atau tidak memiliki benefit");
-                }
-            });
-    }).catch(err => {
-        console.error("Stop kamera gagal:", err);
-    });
-}
-
-
-        function ambilBenefit(no_id, jenisList) {
+    function ambilBenefit(no_id, jenisList) {
         jenisList.forEach(jenis => {
             fetch("/api/benefit/take/", {
                 method: "POST",

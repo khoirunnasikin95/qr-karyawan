@@ -195,21 +195,28 @@ def take_benefit(request):
     if request.method == 'POST':
         no_id = request.POST.get('no_id')
         jenis = request.POST.get('jenis')
+        print("TERIMA POST:", no_id, jenis)  # ✅ debug
 
         try:
             karyawan = Karyawan.objects.get(no_id=no_id)
+            print("Ditemukan:", karyawan.nama)  # ✅ debug
 
             if not PenerimaBenefit.objects.filter(karyawan=karyawan, jenis=jenis).exists():
+                print("❌ Tidak berhak menerima benefit:", jenis)
                 return JsonResponse({'success': False, 'message': 'Tidak berhak menerima benefit'})
 
             if Benefit.objects.filter(karyawan=karyawan, jenis=jenis).exists():
+                print("❌ Sudah pernah ambil benefit:", jenis)
                 return JsonResponse({'success': False, 'message': 'Sudah pernah ambil'})
 
             Benefit.objects.create(karyawan=karyawan, jenis=jenis)
+            print("✅ Benefit dicatat:", jenis)
             return JsonResponse({'success': True})
 
         except Karyawan.DoesNotExist:
+            print("❌ Karyawan tidak ditemukan:", no_id)
             return JsonResponse({'success': False, 'message': 'ID tidak ditemukan'})
+
 
         
 def rekap_benefit(request):
