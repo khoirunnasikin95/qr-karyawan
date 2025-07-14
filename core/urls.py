@@ -18,6 +18,8 @@ urlpatterns = [
     path('scan/benefit/', views.benefit_page, name='benefit'),
     path('api/benefit/<str:no_id>/', views.api_benefit, name='api_benefit'),
     path('api/benefit/take/', views.take_benefit, name='take_benefit'),
+    path('benefit/upload/', views.upload_benefit_excel, name='upload_benefit_excel'),
+    path('benefit/', views.benefit_list, name='benefit_list'),
 
     path('scan/kedisiplinan/', views.kedisiplinan_page, name='kedisiplinan'),
     path('api/kedisiplinan/<str:no_id>/', views.api_kedisiplinan, name='api_kedisiplinan'),

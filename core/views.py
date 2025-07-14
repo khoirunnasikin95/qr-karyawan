@@ -157,7 +157,7 @@ def upload_karyawan_excel(request):
     return render(request, 'rekap/karyawan_upload.html')
 
 
-#benefit-------------------------------------------------------------------------------------------------
+#benefit-###############################################################################################################
 @login_required
 def rekap_benefit(request):
     # Untuk sementara: tampilkan halaman kosong
@@ -290,6 +290,8 @@ def benefit_list(request):
     data = Benefit.objects.select_related('karyawan').order_by('-tanggal')
     return render(request, 'rekap/benefit.html', {'data': data})
 
+@login_required
+@user_passes_test(lambda u: u.is_superuser or u.groups.filter(name='Administrator').exists())
 def upload_benefit_excel(request):
     if request.method == 'POST' and request.FILES.get('excel_file'):
         df = pd.read_excel(request.FILES['excel_file'])
