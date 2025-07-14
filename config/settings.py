@@ -86,14 +86,17 @@ TIME_ZONE = 'Asia/Jakarta'
 USE_I18N = True
 USE_TZ = True
 
-# Static files for Render (collected to /staticfiles)
+
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# TAMBAHKAN INI untuk dev
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'core', 'static'),
+]
+
+# Untuk Render
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-# Tambahkan ini agar folder static/ Anda terbaca saat development
-# STATICFILES_DIRS = [
-#     os.path.join(BASE_DIR, 'static'),
-# ]
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Login
