@@ -62,14 +62,17 @@ function onScanSuccess(decodedText) {
                     document.getElementById("departemen").innerText = data.data.departemen;
 
                     // Tentukan jenis benefit
-                    const jenisBenefit = data.data.jenis || "";
+                    const jenisBenefit = data.data.jenis || [];  // sekarang array
                     let pesan = "Anda tidak mendapatkan benefit";
-                    if (jenisBenefit === "telur_susu") {
-                        pesan = "Anda mendapatkan susu dan telur";
-                    } else if (jenisBenefit === "susu") {
-                        pesan = "Anda mendapatkan susu";
-                    } else if (jenisBenefit === "lainnya") {
-                        pesan = "Anda mendapatkan benefit lainnya";
+
+                    if (jenisBenefit.length > 0) {
+                        if (jenisBenefit.includes("telur_susu")) {
+                            pesan = "Anda mendapatkan susu dan telur";
+                        } else if (jenisBenefit.includes("susu")) {
+                            pesan = "Anda mendapatkan susu";
+                        } else if (jenisBenefit.includes("lainnya")) {
+                            pesan = "Anda mendapatkan benefit lainnya";
+                        }
                     }
 
                     // Bicara
@@ -109,27 +112,27 @@ function onScanSuccess(decodedText) {
 }
 
 
-    function ambilBenefit(no_id, jenisList) {
-    jenisList.forEach(jenis => {
-        fetch("/api/benefit/take/", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded",
-                "X-CSRFToken": "{{ csrf_token }}"
-            },
-            body: `no_id=${no_id}&jenis=${jenis}`
-        })
-        .then(res => res.json())
-        .then(res => {
-            if (res.success) {
-                alert(`Benefit ${jenis} berhasil dicatat.`);
-            } else {
-                alert(res.message || `Gagal mencatat benefit ${jenis}.`);
-            }
-            window.location.reload();
+        function ambilBenefit(no_id, jenisList) {
+        jenisList.forEach(jenis => {
+            fetch("/api/benefit/take/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "X-CSRFToken": "{{ csrf_token }}"
+                },
+                body: `no_id=${no_id}&jenis=${jenis}`
+            })
+            .then(res => res.json())
+            .then(res => {
+                if (res.success) {
+                    alert(`Benefit ${jenis} berhasil dicatat.`);
+                } else {
+                    alert(res.message || `Gagal mencatat benefit ${jenis}.`);
+                }
+                window.location.reload();
+            });
         });
-    });
-}
+    }
 
     Html5Qrcode.getCameras().then(cameras => {
         if (cameras && cameras.length) {
