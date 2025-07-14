@@ -27,7 +27,7 @@ class Karyawan(models.Model):
 class Benefit(models.Model):
     JENIS_BENEFIT = [
         ('susu', 'Susu'),
-        ('telur', 'Telur'),
+        ('telur_susu', 'Telur + Susu'),
         ('lainnya', 'Lainnya'),
     ]
 
