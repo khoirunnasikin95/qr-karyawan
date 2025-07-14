@@ -6,7 +6,8 @@
 </div>
 
 <div class="d-flex flex-column align-items-center">
-    <div id="video-container" class="border rounded shadow-sm" style="width: 90vw; max-width: 400px;"></div>
+    <!-- ZXing akan me-render ke <video> ini -->
+    <video id="preview" width="300" height="250" class="border rounded shadow-sm"></video>
 </div>
 
 <div id="hasil" class="mt-4 text-center d-none">
@@ -31,32 +32,32 @@
     <button class="btn btn-outline-danger" onclick="window.location.reload()">Scan Ulang</button>
 </div>
 
-<!-- ZXing Library -->
+<!-- ZXing Scanner -->
 <script src="https://unpkg.com/@zxing/browser@latest"></script>
 <script>
     const hasil = document.getElementById("hasil");
     const notfound = document.getElementById("notfound");
-    const videoContainer = document.getElementById("video-container");
+    const videoElem = document.getElementById("preview");
 
     const codeReader = new ZXing.BrowserMultiFormatReader();
 
-    // Mulai deteksi kamera dan tampilkan video
     ZXing.BrowserMultiFormatReader.listVideoInputDevices()
         .then(videoInputDevices => {
             if (videoInputDevices.length === 0) {
-                alert("Tidak ada kamera yang terdeteksi.");
+                alert("Tidak ada kamera terdeteksi.");
                 return;
             }
 
             const selectedDeviceId = videoInputDevices[0].deviceId;
 
-            codeReader.decodeFromVideoDevice(selectedDeviceId, videoContainer, (result, err, controls) => {
+            // Setting video element target secara eksplisit
+            codeReader.decodeFromVideoDevice(selectedDeviceId, videoElem, (result, err) => {
                 if (result) {
                     const no_id = result.text;
                     codeReader.reset(); // stop scanning
 
                     fetch(`/api/informasi/${no_id}/`)
-                        .then(res => res.json())
+                        .then(response => response.json())
                         .then(data => {
                             if (data.status === 'ok') {
                                 hasil.classList.remove("d-none");
@@ -77,7 +78,7 @@
         })
         .catch(err => {
             console.error("Camera Error:", err);
-            alert("Gagal mengakses kamera. Pastikan izin kamera sudah diberikan dan browser mendukung.");
+            alert("Gagal mengakses kamera. Pastikan izin kamera diaktifkan dan browser mendukung.");
         });
 </script>
 {% endblock %}
